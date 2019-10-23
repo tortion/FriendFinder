@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="jumbotron" style="background-color:lightskyblue;">
+        <h2 class="text-center">Friend Finder - Node & Express Servers Personified</h2>
+    </div>
+    <div class="container" id="surveyDiv">
+        <div class="row">
+            <div class=col-md-12>
+                <h4>This app will ask you 10 questions and then [attempt to] match you with a semi-interesting
+                    person based on your inputs.</h4>
+                <div class="card">
+                    <div class="card-body mh-100">
+                        <ul style="list-style-type: circle">
+                            <li>Leverages GET and POST methods</li>
+                            <li>Uses NodeJS with the <i>express</i> and <i>fs</i> modules along with 'sendfile' for
+                                HTML content delivery<br>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class=col-md-4 id="namePanel">
+                <h3><u>Tell us about yourself:</u></h3>
+                <div class="card-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="person-name">Full Name</label>
+                            <input type="text" class="form-control" id="person-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="link-to-pic">Enter URL of your picture</label>
+                            <input type="text" class="form-control" id="link-to-pic">
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class=col-md-12 id="questPanel">
+                <h3><u>Survey Questions</u></h3>
+                <h4>
+                    <div id="questID"></div>
+                </h4>
+                <br>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="rb0" value=1>
+                    <label class="form-check-label">
+                        Strongly disagree
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="rb1" value=2>
+                    <label class="form-check-label">
+                        Mostly disagree
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="rb2" value=3>
+                    <label class="form-check-label">
+                        Neutral
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="rb3" value=4>
+                    <label class="form-check-label">
+                        Moderately agree that this describes me
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="rb4" value=5>
+                    <label class="form-check-label">
+                        100% nailed it, that's me!
+                    </label>
+                </div>
+                <br>
+                <div class="col-md-3" id="prevDiv">
+                    <button class="catbtns btn btn-primary btn-block" id="btn-prev" onclick="prevQuestion()">Prev
+                        question</button>
+                </div>
+                <div class="col-md-3" id="nextDiv">
+                    <button class="catbtns btn btn-primary btn-block" id="btn-next" onclick="nextQuestion()">Next
+                        question</button>
+                </div>
+                <div class="col-md-3" id="submitDiv">
+                    <button class="catbtns btn btn-danger btn-block" onclick="submitForm()">Find a
+                        Friend!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="container" id="matchDiv">
+            <br><br><hr>
+            <div class="row">
+                <div class=col-md-2></div>
+                <div class=col-md-4>
+                    <img id="personPicID" class="img-thumbnail" alt="Responsive image">
+                </div>
+                <div class=col-md-6>
+                    <br><br>
+                    <h3>Match with: <span id="personNameID"></span></h3>
+                    <h5>You are within: <span id="matchDiff"></span> relationship point(s)</h5>
+                    <h5>Prognosis: <span id="matchMsg"></span></h5>
+                </div>
+            </div>
+            <hr>
+        </div>
+        <script type="text/javascript">
+
+            var surveyArray =
+                ["Your mind is always buzzing with unexplored ideas and plans.",
+                    "Generally speaking, you rely more on your experience than your imagination.",
+                    "You find it easy to stay relaxed and focused even when there is some pressure.",
+                    "You rarely do something just out of sheer curiosity.", "People can rarely upset you.",
+                    "It is often difficult for you to relate to other people’s feelings.",
+                    "In a discussion, truth should be more important than people’s sensitivities.",
+                    "You rarely get carried away by fantasies and ideas.",
+                    "You think that everyone’s views should be respected regardless of whether they are supported by facts or not.",
+                    "You feel more energetic after spending time with a group of people."];
+
+            var matchMsg =
+                ["It must be love...",
+                 "Prepare for your new bestie...",
+                 "You seem moderately compatible... ",
+                 "Good luck, you'll need it with this person!"];
+
+            var q = 0;
+            var answersAry = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            const imageDir = "";
+
+            $("#submitDiv").hide();
+            $("#surveyDiv").show();
+            $("#matchDiv").hide();
+            $("#btn-prev").prop("disabled", true);
+            $("#rb0").prop("checked", true);
+            $("#questID").html(`Question #${q + 1}: ${surveyArray[q]}`);
+
+            function updateAnswer() {
+                var whatChecked = $('#questPanel input:radio:checked').val();
+                answersAry[q] = whatChecked;
+                $("#rb" + (whatChecked - 1)).removeAttr('checked');
+            }
+
+            function updateRadio() {
+                $("#rb" + (answersAry[q] - 1)).prop("checked", true);
+            }
+
+            function renderQuestion() {
+                $("#questID").html(`Question #${q + 1}: ${surveyArray[q]}`);
+            }
+
+            function nextQuestion() {
+                updateAnswer();
+                if (q < 9) {
+                    $("#btn-prev").removeAttr('disabled');
+                    q++;
+                    updateRadio();
+                    renderQuestion();
+                    if (q == 9) {
+                        $('#btn-next').prop("disabled", true);
+                        $("#submitDiv").show();
+                        console.log(answersAry);
+                    }
+                }
+            }
+
+            function prevQuestion() {
+                updateAnswer();
+                if (q > 0) {
+                    q--;
+                    updateRadio();
+                    renderQuestion();
+                    if (q == 0)
+                        $('#btn-prev').prop("disabled", true);
+                    $("#btn-next").removeAttr('disabled');
+                }
+            }
+
+            function submitForm() {
+                var scores = [];
+                var matchIndex = 0;
+                for (let x = 0; x < 10; x++) {
+
+                }
+                updateAnswer();
+                var friendObj = {
+                    name: $("#person-name").val().trim(),
+                    pic: $("#link-to-pic").val().trim(),
+                    scores: answersAry
+                };
+                console.log(friendObj);
+
+                $.post("/api/postfriend", friendObj,
+                    function (data) {
+                        if (data) {
+                            $("#surveyDiv").hide();
+                            $("#matchDiv").show();
+                            $("#personNameID").text(data.matchName);
+                            $("#matchDiff").text(data.matchDiff);
+                            $("#personPicID").attr("src", imageDir + data.matchPic);
+                            $("#personPicID").attr("style", "width:200px;height:200px;");
+                            switch (data.matchDiff) {
+                                case 0:
+                                case 1:
+                                case 2: matchIndex=0;
+                                break;
+                                case 3:
+                                case 4:
+                                case 5: matchIndex=1;
+                                break;
+                                case 6:
+                                case 7:
+                                case 8: matchIndex=2;
+                                break;
+                                default: matchIndex=3;
+                            }
+                            console.log(data.matchDiff + " - " + matchIndex)
+                            $("#matchMsg").text(matchMsg[matchIndex]);
+                        }
+                        else {
+                            alert("You suck, no friends");
+                        }
+                    }
+                )
+            }
+
+        </script>
+</body>
+
+</html>
